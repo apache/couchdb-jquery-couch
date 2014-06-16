@@ -218,6 +218,7 @@
           } else {
             throw 'An error occurred logging in: ' + resp.reason;
           }
+          if (options.complete) options.complete();
         }
       });
     },
@@ -248,6 +249,7 @@
           } else {
             throw 'An error occurred logging out: ' + resp.reason;
           }
+          if (options.complete) options.complete();
         }
       });
     },

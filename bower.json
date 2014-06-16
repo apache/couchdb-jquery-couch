@@ -1,0 +1,27 @@
+{
+  "name": "couchdb-jquery-couch",
+  "version": "0.0.0",
+  "homepage": "https://github.com/apache/couchdb-jquery-couch/",
+  "main": "jquery.couch.js",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "couchdb",
+    "jquery"
+  ],
+  "license": "Apache License, Version 2.0",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "mocha": "~1.20.1",
+    "jquery": "~2.1.1",
+    "chai": "~1.9.1"
+  }
+}
