@@ -792,6 +792,11 @@
                 : "(" + reduceFun.toString() + ")";
             body.reduce = reduceFun;
           }
+          if (options["keys"]) {
+            var keys = options["keys"];
+            delete options["keys"];
+            body.keys = keys;
+          }
           return ajax({
               type: "POST",
               url: this.uri + "_temp_view" + encodeOptions(options),
