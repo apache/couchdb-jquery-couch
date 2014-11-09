@@ -10,4 +10,11 @@ Install the dependencies:
 $ bower install
 ```
 
-Open `test/runner.html` in a browser to run the testsuite.
+Enable CORS:
+
+```
+curl -X PUT http://localhost:5984/_config/httpd/enable_cors -d '"true"'
+curl -X PUT http://localhost:5984/_config/cors/origins -d '"*"'
+```
+
+Restart CouchDB & open `test/runner.html` in a browser to run the testsuite.

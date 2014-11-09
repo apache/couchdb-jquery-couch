@@ -15,7 +15,7 @@
 (function () {
   var assert = chai.assert;
 
-  describe('jquery.couch.js', function () {
+  describe('test.js', function () {
     it('should be an object as a jquery function', function () {
       assert.equal(typeof $.couch, 'object');
     });
