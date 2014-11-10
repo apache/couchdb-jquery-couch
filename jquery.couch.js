@@ -10,6 +10,25 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+/*jslint
+  browser: true,
+  continue: true,
+  debug: true,
+  evil: false,
+  indent: 2,
+  nomen: true,
+*/
+/*global
+  ajax: false,
+  Base64: false,
+  encodeOptions: false,
+  encodeURIComponent: false,
+  fullCommit: false,
+  jQuery: false,
+  maybeUseCache: false,
+  toJSON: false,
+*/
+
 /**
  * @namespace
  * $.couch is used to communicate with a CouchDB server, the server methods can
@@ -34,7 +53,8 @@
  *  }
  *]</code></pre>
  */
-(function($) {
+(function ($) {
+  'use strict';
 
   $.couch = $.couch || {};
   /** @lends $.couch */
@@ -44,7 +64,7 @@
    */
   function encodeDocId(docID) {
     var parts = docID.split("/");
-    if (parts[0] == "_design") {
+    if (parts[0] === "_design") {
       parts.shift();
       return "_design/" + encodeURIComponent(parts.join('/'));
     }
@@ -69,7 +89,7 @@
      * @param {ajaxSettings} options <a href="http://api.jquery.com/jQuery.ajax
      * /#jQuery-ajax-settings">jQuery ajax settings</a>
      */
-    activeTasks: function(options) {
+    activeTasks: function (options) {
       return ajax(
         {url: this.urlPrefix + "/_active_tasks"},
         options,
@@ -84,7 +104,7 @@
      * @param {ajaxSettings} options <a href="http://api.jquery.com/jQuery.ajax
      * /#jQuery-ajax-settings">jQuery ajax settings</a>
      */
-    allDbs: function(options) {
+    allDbs: function (options) {
       return ajax(
         {url: this.urlPrefix + "/_all_dbs"},
         options,
@@ -106,7 +126,7 @@
      * @param {String} [option] the particular config option
      * @param {String} [value] value to be set
      */
-    config: function(options, section, option, value) {
+    config: function (options, section, option, value) {
       var req = {url: this.urlPrefix + "/_config/"};
       if (section) {
         req.url += encodeURIComponent(section) + "/";
@@ -120,12 +140,11 @@
         req.type = "PUT";
         req.data = toJSON(value);
         req.contentType = "application/json";
-        req.processData = false
+        req.processData = false;
       }
 
       return ajax(req, options,
-        "An error occurred retrieving/updating the server configuration"
-      );
+        "An error occurred retrieving/updating the server configuration");
     },
 
     /**
@@ -136,17 +155,20 @@
      * <a href="http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings">
      * jQuery ajax settings</a>
      */
-    session: function(options) {
+    session: function (options) {
       options = options || {};
       return ajax({
-        type: "GET", url: this.urlPrefix + "/_session",
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader('Accept', 'application/json');
+        type: "GET",
+        url: this.urlPrefix + "/_session",
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('Accept', 'application/json');
         },
-        complete: function(req) {
+        complete: function (req) {
           var resp = $.parseJSON(req.responseText);
-          if (req.status == 200) {
-            if (options.success) options.success(resp);
+          if (req.status === 200) {
+            if (options.success) {
+              options.success(resp);
+            }
           } else if (options.error) {
             options.error(req.status, resp.error, resp.reason);
           } else {
@@ -159,9 +181,9 @@
     /**
      * @private
      */
-    userDb : function(callback) {
+    userDb: function (callback) {
       return $.couch.session({
-        success : function(resp) {
+        success: function (resp) {
           var userDb = $.couch.db(resp.info.authentication_db);
           callback(userDb);
         }
@@ -173,52 +195,61 @@
      * object with a <code>name</code> field and other information you want
      * to store relating to that user, for example
      * <code>{"name": "daleharvey"}</code>
-     * @param {Object} user_doc Users details
+     * @param {Object} userDoc Users details
      * @param {String} password Users password
      * @param {ajaxSettings} options
      * <a href="http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings">
-      * jQuery ajax settings</a>
+     * jQuery ajax settings</a>
      */
-    signup: function(user_doc, password, options) {
+    signup: function (userDoc, password, options) {
       options = options || {};
-      user_doc.password = password;
-      user_doc.roles = user_doc.roles || [];
-      user_doc.type = "user";
+      userDoc.password = password;
+      userDoc.roles = userDoc.roles || [];
+      userDoc.type = "user";
       var user_prefix = "org.couchdb.user:";
-      user_doc._id = user_doc._id || user_prefix + user_doc.name;
+      userDoc._id = userDoc._id || user_prefix + userDoc.name;
 
-      return $.couch.userDb(function(db) {
-        db.saveDoc(user_doc, options);
+      return $.couch.userDb(function (db) {
+        db.saveDoc(userDoc, options);
       });
     },
 
     /**
      * Authenticate against CouchDB, the <code>options</code> parameter is
-      *expected to have <code>name</code> and <code>password</code> fields.
+     *expected to have <code>name</code> and <code>password</code> fields.
      * @see <a href="http://docs.couchdb.org/en/latest/api/server/authn.html
      * #post--_session">docs for POST /_session</a>
      * @param {ajaxSettings} options
      * <a href="http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings">
      * jQuery ajax settings</a>
      */
-    login: function(options) {
+    login: function (options) {
       options = options || {};
       return $.ajax({
-        type: "POST", url: this.urlPrefix + "/_session", dataType: "json",
-        data: {name: options.name, password: options.password},
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader('Accept', 'application/json');
+        type: "POST",
+        url: this.urlPrefix + "/_session",
+        dataType: "json",
+        data: {
+          name: options.name,
+          password: options.password
         },
-        complete: function(req) {
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('Accept', 'application/json');
+        },
+        complete: function (req) {
           var resp = $.parseJSON(req.responseText);
-          if (req.status == 200) {
-            if (options.success) options.success(resp);
+          if (req.status === 200) {
+            if (options.success) {
+              options.success(resp);
+            }
           } else if (options.error) {
             options.error(req.status, resp.error, resp.reason);
           } else {
             throw 'An error occurred logging in: ' + resp.reason;
           }
-          if (options.complete) options.complete();
+          if (options.complete) {
+            options.complete();
+          }
         }
       });
     },
@@ -232,24 +263,31 @@
      * <a href="http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings">
      * jQuery ajax settings</a>
      */
-    logout: function(options) {
+    logout: function (options) {
       options = options || {};
       return $.ajax({
-        type: "DELETE", url: this.urlPrefix + "/_session", dataType: "json",
-        username : "_", password : "_",
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader('Accept', 'application/json');
+        type: "DELETE",
+        url: this.urlPrefix + "/_session",
+        dataType: "json",
+        username: "_",
+        password: "_",
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('Accept', 'application/json');
         },
-        complete: function(req) {
+        complete: function (req) {
           var resp = $.parseJSON(req.responseText);
-          if (req.status == 200) {
-            if (options.success) options.success(resp);
+          if (req.status === 200) {
+            if (options.success) {
+              options.success(resp);
+            }
           } else if (options.error) {
             options.error(req.status, resp.error, resp.reason);
           } else {
             throw 'An error occurred logging out: ' + resp.reason;
           }
-          if (options.complete) options.complete();
+          if (options.complete) {
+            options.complete();
+          }
         }
       });
     },
@@ -265,26 +303,28 @@
      *});
      * </code></pre>
      */
-    db: function(name, db_opts) {
+    db: function (name, db_opts) {
       db_opts = db_opts || {};
       var rawDocs = {};
+
       function maybeApplyVersion(doc) {
         if (doc._id && doc._rev && rawDocs[doc._id] &&
-            rawDocs[doc._id].rev == doc._rev) {
+            rawDocs[doc._id].rev === doc._rev) {
           // todo: can we use commonjs require here?
-          if (typeof Base64 == "undefined") {
+          if (typeof Base64 === "undefined") {
             throw 'Base64 support not found.';
-          } else {
-            doc._attachments = doc._attachments || {};
-            doc._attachments["rev-"+doc._rev.split("-")[0]] = {
-              content_type :"application/json",
-              data : Base64.encode(rawDocs[doc._id].raw)
-            };
-            return true;
           }
+          doc._attachments = doc._attachments || {};
+          doc._attachments["rev-" + doc._rev.split("-")[0]] = {
+            content_type: "application/json",
+            data: Base64.encode(rawDocs[doc._id].raw)
+          };
+          return true;
         }
+        return false;
       }
-      return /** @lends $.couch.db */{
+
+      return /** @lends $.couch.db */ {
         name: name,
         uri: this.urlPrefix + "/" + encodeURIComponent(name) + "/",
 
@@ -296,11 +336,14 @@
          * <a href="http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings">
          * jQuery ajax settings</a>
          */
-        compact: function(options) {
+        compact: function (options) {
           $.extend(options, {successStatus: 202});
-          return ajax({
-              type: "POST", url: this.uri + "_compact",
-              data: "", processData: false
+          return ajax(
+            {
+              type: "POST",
+              url: this.uri + "_compact",
+              data: "",
+              processData: false
             },
             options,
             "The database could not be compacted"
@@ -314,11 +357,14 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        viewCleanup: function(options) {
+        viewCleanup: function (options) {
           $.extend(options, {successStatus: 202});
-          return ajax({
-              type: "POST", url: this.uri + "_view_cleanup",
-              data: "", processData: false
+          return ajax(
+            {
+              type: "POST",
+              url: this.uri + "_view_cleanup",
+              data: "",
+              processData: false
             },
             options,
             "The views could not be cleaned up"
@@ -337,11 +383,14 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        compactView: function(groupname, options) {
+        compactView: function (groupname, options) {
           $.extend(options, {successStatus: 202});
-          return ajax({
-              type: "POST", url: this.uri + "_compact/" + groupname,
-              data: "", processData: false
+          return ajax(
+            {
+              type: "POST",
+              url: this.uri + "_compact/" + groupname,
+              data: "",
+              processData: false
             },
             options,
             "The view could not be compacted"
@@ -355,11 +404,15 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        create: function(options) {
+        create: function (options) {
           $.extend(options, {successStatus: 201});
-          return ajax({
-              type: "PUT", url: this.uri, contentType: "application/json",
-              data: "", processData: false
+          return ajax(
+            {
+              type: "PUT",
+              url: this.uri,
+              contentType: "application/json",
+              data: "",
+              processData: false
             },
             options,
             "The database could not be created"
@@ -374,9 +427,12 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        drop: function(options) {
+        drop: function (options) {
           return ajax(
-            {type: "DELETE", url: this.uri},
+            {
+              type: "DELETE",
+              url: this.uri
+            },
             options,
             "The database could not be deleted"
           );
@@ -389,7 +445,7 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        info: function(options) {
+        info: function (options) {
           return ajax(
             {url: this.uri},
             options,
@@ -408,8 +464,7 @@
          * $changes.stop();
          * </code></pre>
          */
-        changes: function(since, options) {
-
+        changes: function (since, options) {
           options = options || {};
           // set up the promise object within a closure for this handler
           var timeout = 100, db = this, active = true,
@@ -423,28 +478,41 @@
                * @param {Function} fun Callback function to run when
                * notified of changes.
                */
-            onChange : function(fun) {
-              listeners.push(fun);
-            },
+              onChange: function (fun) {
+                listeners.push(fun);
+              },
               /**
                * Stop subscribing to the changes feed
                */
-            stop : function() {
-              active = false;
-              if (xhr){
-                xhr.abort();
+              stop: function () {
+                active = false;
+                if (xhr) {
+                  xhr.abort();
+                }
               }
-            }
-          };
+            };
           // call each listener when there is a change
           function triggerListeners(resp) {
-            $.each(listeners, function() {
+            $.each(listeners, function () {
               this(resp);
             });
           }
+          // actually make the changes request
+          function getChangesSince() {
+            var opts = $.extend({heartbeat: 10 * 1000}, options, {
+              feed: "longpoll",
+              since: since
+            });
+            xhr = ajax(
+              {url: db.uri + "_changes" + encodeOptions(opts)},
+              options,
+              "Error connecting to " + db.uri + "/_changes."
+            );
+          }
+
           // when there is a change, call any listeners, then check for
           // another change
-          options.success = function(resp) {
+          options.success = function (resp) {
             timeout = 100;
             if (active) {
               since = resp.last_seq;
@@ -452,30 +520,19 @@
               getChangesSince();
             }
           };
-          options.error = function() {
+          options.error = function () {
             if (active) {
               setTimeout(getChangesSince, timeout);
               timeout = timeout * 2;
             }
           };
-          // actually make the changes request
-          function getChangesSince() {
-            var opts = $.extend({heartbeat : 10 * 1000}, options, {
-              feed : "longpoll",
-              since : since
-            });
-            xhr = ajax(
-              {url: db.uri + "_changes"+encodeOptions(opts)},
-              options,
-              "Error connecting to "+db.uri+"/_changes."
-            );
-          }
+
           // start the first request
           if (since) {
             getChangesSince();
           } else {
             db.info({
-              success : function(info) {
+              success: function (info) {
                 since = info.update_seq;
                 getChangesSince();
               }
@@ -494,16 +551,16 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        allDocs: function(options) {
-          var type = "GET";
-          var data = null;
-          if (options["keys"]) {
+        allDocs: function (options) {
+          var type = "GET", data = null, keys;
+          if (options.keys) {
             type = "POST";
-            var keys = options["keys"];
-            delete options["keys"];
-            data = toJSON({ "keys": keys });
+            keys = options.keys;
+            delete options.keys;
+            data = toJSON({"keys": keys});
           }
-          return ajax({
+          return ajax(
+            {
               type: type,
               data: data,
               url: this.uri + "_all_docs" + encodeOptions(options)
@@ -518,9 +575,11 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        allDesignDocs: function(options) {
+        allDesignDocs: function (options) {
           return this.allDocs($.extend(
-            {startkey:"_design", endkey:"_design0"}, options));
+            {startkey: "_design", endkey: "_design0"},
+            options
+          ));
         },
 
         /**
@@ -530,15 +589,15 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        allApps: function(options) {
+        allApps: function (options) {
           options = options || {};
           var self = this;
           if (options.eachApp) {
             return this.allDesignDocs({
-              success: function(resp) {
-                $.each(resp.rows, function() {
+              success: function (resp) {
+                $.each(resp.rows, function () {
                   self.openDoc(this.id, {
-                    success: function(ddoc) {
+                    success: function (ddoc) {
                       var index, appPath, appName = ddoc._id.split('/');
                       appName.shift();
                       appName = appName.join('/');
@@ -549,7 +608,9 @@
                                  ddoc._attachments["index.html"]) {
                         appPath = ['', name, ddoc._id, "index.html"].join('/');
                       }
-                      if (appPath) options.eachApp(appName, appPath, ddoc);
+                      if (appPath) {
+                        options.eachApp(appName, appPath, ddoc);
+                      }
                     }
                   });
                 });
@@ -570,24 +631,24 @@
          * @param {ajaxSettings} ajaxOptions <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        openDoc: function(docId, options, ajaxOptions) {
+        openDoc: function (docId, options, ajaxOptions) {
           options = options || {};
           if (db_opts.attachPrevRev || options.attachPrevRev) {
             $.extend(options, {
-              beforeSuccess : function(req, doc) {
+              beforeSuccess: function (req, doc) {
                 rawDocs[doc._id] = {
-                  rev : doc._rev,
-                  raw : req.responseText
+                  rev: doc._rev,
+                  raw: req.responseText
                 };
               }
             });
           } else {
             $.extend(options, {
-              beforeSuccess : function(req, doc) {
+              beforeSuccess: function (req, doc) {
                 if (doc["jquery.couch.attachPrevRev"]) {
                   rawDocs[doc._id] = {
-                    rev : doc._rev,
-                    raw : req.responseText
+                    rev: doc._rev,
+                    raw: req.responseText
                   };
                 }
               }
@@ -613,38 +674,44 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        saveDoc: function(doc, options) {
+        saveDoc: function (doc, options) {
           options = options || {};
-          var db = this;
-          var beforeSend = fullCommit(options);
+          var db = this,
+            method,
+            uri,
+            beforeSend = fullCommit(options),
+            versioned = maybeApplyVersion(doc);
           if (doc._id === undefined) {
-            var method = "POST";
-            var uri = this.uri;
+            method = "POST";
+            uri = this.uri;
           } else {
-            var method = "PUT";
-            var uri = this.uri + encodeDocId(doc._id);
+            method = "PUT";
+            uri = this.uri + encodeDocId(doc._id);
           }
-          var versioned = maybeApplyVersion(doc);
           return $.ajax({
-            type: method, url: uri + encodeOptions(options),
+            type: method,
+            url: uri + encodeOptions(options),
             contentType: "application/json",
-            dataType: "json", data: toJSON(doc),
-            beforeSend : beforeSend,
-            complete: function(req) {
+            dataType: "json",
+            data: toJSON(doc),
+            beforeSend: beforeSend,
+            complete: function (req) {
               var resp = $.parseJSON(req.responseText);
-              if (req.status == 200 || req.status == 201 || req.status == 202) {
+              if (req.status >= 200 && req.status <= 202) {
                 doc._id = resp.id;
                 doc._rev = resp.rev;
                 if (versioned) {
                   db.openDoc(doc._id, {
-                    attachPrevRev : true,
-                    success : function(d) {
+                    attachPrevRev: true,
+                    success: function (d) {
                       doc._attachments = d._attachments;
-                      if (options.success) options.success(resp);
+                      if (options.success) {
+                        options.success(resp);
+                      }
                     }
                   });
-                } else {
-                  if (options.success) options.success(resp);
+                } else if (options.success) {
+                  options.success(resp);
                 }
               } else if (options.error) {
                 options.error(req.status, resp.error, resp.reason);
@@ -663,13 +730,15 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        bulkSave: function(docs, options) {
+        bulkSave: function (docs, options) {
           var beforeSend = fullCommit(options);
-          $.extend(options, {successStatus: 201, beforeSend : beforeSend});
-          return ajax({
+          $.extend(options, {successStatus: 201, beforeSend: beforeSend});
+          return ajax(
+            {
               type: "POST",
               url: this.uri + "_bulk_docs" + encodeOptions(options),
-              contentType: "application/json", data: toJSON(docs)
+              contentType: "application/json",
+              data: toJSON(docs)
             },
             options,
             "The documents could not be saved"
@@ -686,12 +755,13 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        removeDoc: function(doc, options) {
-          return ajax({
+        removeDoc: function (doc, options) {
+          return ajax(
+            {
               type: "DELETE",
               url: this.uri +
-                   encodeDocId(doc._id) +
-                   encodeOptions({rev: doc._rev})
+                encodeDocId(doc._id) +
+                encodeOptions({rev: doc._rev})
             },
             options,
             "The document could not be deleted"
@@ -706,14 +776,16 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        bulkRemove: function(docs, options){
+        bulkRemove: function (docs, options) {
           docs.docs = $.each(
-            docs.docs, function(i, doc){
+            docs.docs,
+            function (_, doc) {
               doc._deleted = true;
             }
           );
           $.extend(options, {successStatus: 201});
-          return ajax({
+          return ajax(
+            {
               type: "POST",
               url: this.uri + "_bulk_docs" + encodeOptions(options),
               data: toJSON(docs)
@@ -734,22 +806,24 @@
          * @param {ajaxSettings} ajaxOptions <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        copyDoc: function(docId, options, ajaxOptions) {
+        copyDoc: function (docId, options, ajaxOptions) {
           ajaxOptions = $.extend(ajaxOptions, {
-            beforeSend: function(XMLHttpRequest) {
+            beforeSend: function (XMLHttpRequest) {
               if (!options || !options.docid) {
-                  throw "Target docid required";
+                throw "Target docid required";
               }
               var header = options.docid;
               if (options.rev) {
-                  header += '?rev=' + options.rev
+                header += '?rev=' + options.rev;
               }
               XMLHttpRequest.setRequestHeader("Destination", header);
             },
-            complete: function(req) {
+            complete: function (req) {
               var resp = $.parseJSON(req.responseText);
-              if (req.status == 201) {
-                if (options.success) options.success(resp);
+              if (req.status === 201) {
+                if (options.success) {
+                  options.success(resp);
+                }
               } else if (options.error) {
                 options.error(req.status, resp.error, resp.reason);
               } else {
@@ -757,7 +831,8 @@
               }
             }
           });
-          return ajax({
+          return ajax(
+            {
               type: "COPY",
               url: this.uri + encodeDocId(docId)
             },
@@ -779,28 +854,32 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        query: function(mapFun, reduceFun, language, options) {
+        query: function (mapFun, reduceFun, language, options) {
+          var body, keys;
           language = language || "javascript";
-          if (typeof(mapFun) !== "string") {
+          if (typeof mapFun !== "string") {
             mapFun = mapFun.toSource ? mapFun.toSource()
               : "(" + mapFun.toString() + ")";
           }
-          var body = {language: language, map: mapFun};
-          if (reduceFun != null) {
-            if (typeof(reduceFun) !== "string")
+          body = {language: language, map: mapFun};
+          if (reduceFun !== null) {
+            if (typeof reduceFun !== "string") {
               reduceFun = reduceFun.toSource ? reduceFun.toSource()
                 : "(" + reduceFun.toString() + ")";
+            }
             body.reduce = reduceFun;
           }
-          if (options["keys"]) {
-            var keys = options["keys"];
-            delete options["keys"];
+          if (options.keys) {
+            keys = options.keys;
+            delete options.keys;
             body.keys = keys;
           }
-          return ajax({
+          return ajax(
+            {
               type: "POST",
               url: this.uri + "_temp_view" + encodeOptions(options),
-              contentType: "application/json", data: toJSON(body)
+              contentType: "application/json",
+              data: toJSON(body)
             },
             options,
             "An error occurred querying the database"
@@ -821,24 +900,25 @@
          * @param {ajaxSettings} ajaxOptions <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        list: function(list, view, options, ajaxOptions) {
-          var list = list.split('/');
-          var options = options || {};
-          var type = 'GET';
-          var data = null;
-          if (options['keys']) {
+        list: function (list, view, options, ajaxOptions) {
+          list = list.split('/');
+          options = options || {};
+          var type = 'GET', data = null, keys;
+          if (options.keys) {
             type = 'POST';
-            var keys = options['keys'];
-            delete options['keys'];
+            keys = options.keys;
+            delete options.keys;
             data = toJSON({'keys': keys });
           }
-          return ajax({
+          return ajax(
+            {
               type: type,
               data: data,
               url: this.uri + '_design/' + list[0] +
-                   '/_list/' + list[1] + '/' + view + encodeOptions(options)
-              },
-              ajaxOptions, 'An error occurred accessing the list'
+                '/_list/' + list[1] + '/' + view + encodeOptions(options)
+            },
+            ajaxOptions,
+            'An error occurred accessing the list'
           );
         },
 
@@ -854,24 +934,25 @@
          * @param {ajaxSettings} options <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        view: function(name, options) {
-          var name = name.split('/');
-          var options = options || {};
-          var type = "GET";
-          var data= null;
-          if (options["keys"]) {
+        view: function (name, options) {
+          name = name.split('/');
+          options = options || {};
+          var type = 'GET', data = null, keys;
+          if (options.keys) {
             type = "POST";
-            var keys = options["keys"];
-            delete options["keys"];
+            keys = options.keys;
+            delete options.keys;
             data = toJSON({ "keys": keys });
           }
-          return ajax({
+          return ajax(
+            {
               type: type,
               data: data,
               url: this.uri + "_design/" + name[0] +
-                   "/_view/" + name[1] + encodeOptions(options)
+                "/_view/" + name[1] + encodeOptions(options)
             },
-            options, "An error occurred accessing the view"
+            options,
+            "An error occurred accessing the view"
           );
         },
 
@@ -883,8 +964,9 @@
          * @param {ajaxSettings} ajaxOptions <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        getDbProperty: function(propName, options, ajaxOptions) {
-          return ajax({url: this.uri + propName + encodeOptions(options)},
+        getDbProperty: function (propName, options, ajaxOptions) {
+          return ajax(
+            {url: this.uri + propName + encodeOptions(options)},
             options,
             "The property could not be retrieved",
             ajaxOptions
@@ -900,12 +982,13 @@
          * @param {ajaxSettings} ajaxOptions <a href="http://api.jquery.com/
          * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
          */
-        setDbProperty: function(propName, propValue, options, ajaxOptions) {
-          return ajax({
-            type: "PUT",
-            url: this.uri + propName + encodeOptions(options),
-            data : JSON.stringify(propValue)
-          },
+        setDbProperty: function (propName, propValue, options, ajaxOptions) {
+          return ajax(
+            {
+              type: "PUT",
+              url: this.uri + propName + encodeOptions(options),
+              data: JSON.stringify(propValue)
+            },
             options,
             "The property could not be updated",
             ajaxOptions
@@ -927,7 +1010,7 @@
      * @param {ajaxSettings} options <a href="http://api.jquery.com/
      * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
      */
-    info: function(options) {
+    info: function (options) {
       return ajax(
         {url: this.urlPrefix + "/"},
         options,
@@ -945,13 +1028,15 @@
      * jQuery.ajax/#jQuery-ajax-settings">jQuery ajax settings</a>
      * @param {Object} repOpts Additional replication options
      */
-    replicate: function(source, target, ajaxOptions, repOpts) {
+    replicate: function (source, target, ajaxOptions, repOpts) {
       repOpts = $.extend({source: source, target: target}, repOpts);
       if (repOpts.continuous && !repOpts.cancel) {
         ajaxOptions.successStatus = 202;
       }
-      return ajax({
-          type: "POST", url: this.urlPrefix + "/_replicate",
+      return ajax(
+        {
+          type: "POST",
+          url: this.urlPrefix + "/_replicate",
           data: JSON.stringify(repOpts),
           contentType: "application/json"
         },
@@ -966,14 +1051,21 @@
      * #uuids">docs for /_uuids</a>
      * @param {Integer} cacheNum Number of uuids to keep cached for future use
      */
-    newUUID: function(cacheNum) {
+    newUUID: function (cacheNum) {
       if (cacheNum === undefined) {
         cacheNum = 1;
       }
       if (!uuidCache.length) {
-        ajax({url: this.urlPrefix + "/_uuids", data: {count: cacheNum}, async:
-              false}, {
-            success: function(resp) {
+        ajax(
+          {
+            url: this.urlPrefix + "/_uuids",
+            data: {
+              count: cacheNum
+            },
+            async: false
+          },
+          {
+            success: function (resp) {
               uuidCache = resp.uuids;
             }
           },
@@ -988,63 +1080,84 @@
    * @private
    */
   function ajax(obj, options, errorMessage, ajaxOptions) {
-    var timeStart;
-    var defaultAjaxOpts = {
+    var timeStart, defaultAjaxOpts = {
       contentType: "application/json",
-      headers:{"Accept": "application/json"}
+      headers: {
+        "Accept": "application/json"
+      }
     };
 
     options = $.extend({successStatus: 200}, options);
     ajaxOptions = $.extend(defaultAjaxOpts, ajaxOptions);
     errorMessage = errorMessage || "Unknown error";
     timeStart = (new Date()).getTime();
-    return $.ajax($.extend($.extend({
-      type: "GET", dataType: "json", cache : maybeUseCache(),
-      beforeSend: function(xhr){
-        if(ajaxOptions && ajaxOptions.headers){
-          for (var header in ajaxOptions.headers){
-            xhr.setRequestHeader(header, ajaxOptions.headers[header]);
-          }
-        }
-      },
-      complete: function(req) {
-        var reqDuration = (new Date()).getTime() - timeStart;
-        try {
-          var resp = $.parseJSON(req.responseText);
-        } catch(e) {
-          if (options.error) {
-            options.error(req.status, req, e);
-          } else {
-            throw errorMessage + ': ' + e;
-          }
-          return;
-        }
-        if (options.ajaxStart) {
-          options.ajaxStart(resp);
-        }
-        if (req.status == options.successStatus) {
-          if (options.beforeSuccess) options.beforeSuccess(req, resp, reqDuration);
-          if (options.success) options.success(resp, reqDuration);
-        } else if (options.error) {
-          options.error(req.status, resp && resp.error ||
-                        errorMessage, resp && resp.reason || "no response",
-                        reqDuration);
-        } else {
-          throw errorMessage + ": " + resp.reason;
-        }
-      }
-    }, obj), ajaxOptions));
+    return $.ajax(
+      $.extend(
+        $.extend(
+          {
+            type: "GET",
+            dataType: "json",
+            cache : maybeUseCache(),
+            beforeSend: function (xhr) {
+              var header;
+              if (ajaxOptions && ajaxOptions.headers) {
+                for (header in ajaxOptions.headers) {
+                  if (ajaxOptions.headers.hasOwnProperty(header)) {
+                    xhr.setRequestHeader(header, ajaxOptions.headers[header]);
+                  }
+                }
+              }
+            },
+            complete: function (req) {
+              var reqDuration = (new Date()).getTime() - timeStart, resp;
+              try {
+                resp = $.parseJSON(req.responseText);
+              } catch (e) {
+                if (options.error) {
+                  options.error(req.status, req, e);
+                } else {
+                  throw errorMessage + ': ' + e;
+                }
+                return;
+              }
+              if (options.ajaxStart) {
+                options.ajaxStart(resp);
+              }
+              if (req.status === options.successStatus) {
+                if (options.beforeSuccess) {
+                  options.beforeSuccess(req, resp, reqDuration);
+                }
+                if (options.success) {
+                  options.success(resp, reqDuration);
+                }
+              } else if (options.error) {
+                options.error(
+                  req.status,
+                  (resp && resp.error) || errorMessage,
+                  (resp && resp.reason) || "no response",
+                  reqDuration
+                );
+              } else {
+                throw errorMessage + ": " + resp.reason;
+              }
+            }
+          },
+          obj
+        ),
+        ajaxOptions
+      )
+    );
   }
 
   /**
    * @private
    */
   function fullCommit(options) {
-    var options = options || {};
-    if (typeof options.ensure_full_commit !== "undefined") {
+    options = options || {};
+    if (options.ensure_full_commit !== undefined) {
       var commit = options.ensure_full_commit;
       delete options.ensure_full_commit;
-      return function(xhr) {
+      return function (xhr) {
         xhr.setRequestHeader('Accept', 'application/json');
         xhr.setRequestHeader("X-Couch-Full-Commit", commit.toString());
       };
@@ -1057,17 +1170,20 @@
   // Convert a options object to an url query string.
   // ex: {key:'value',key2:'value2'} becomes '?key="value"&key2="value2"'
   function encodeOptions(options) {
-    var buf = [];
-    if (typeof(options) === "object" && options !== null) {
-      for (var name in options) {
-        if ($.inArray(name,
-                      ["error", "success", "beforeSuccess", "ajaxStart"]) >= 0)
-          continue;
-        var value = options[name];
-        if ($.inArray(name, ["key", "startkey", "endkey"]) >= 0) {
-          value = toJSON(value);
+    var name, value, buf = [];
+    if (typeof options  === "object" && options !== null) {
+      for (name in options) {
+        if (options.hasOwnProperty(name)) {
+          if ($.inArray(name,
+              ["error", "success", "beforeSuccess", "ajaxStart"]) >= 0) {
+            continue;
+          }
+          value = options[name];
+          if ($.inArray(name, ["key", "startkey", "endkey"]) >= 0) {
+            value = toJSON(value);
+          }
+          buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
         }
-        buf.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
       }
     }
     return buf.length ? "?" + buf.join("&") : "";
@@ -1084,13 +1200,7 @@
    * @private
    */
   function maybeUseCache() {
-    if (!navigator){
-      return true;
-    }
-    else if (/(MSIE|Trident)/.test(navigator.userAgent)){
-      return false;
-    }
-    return true;
+    return !navigator || !(/(MSIE|Trident)/.test(navigator.userAgent));
   }
 
-})(jQuery);
+}(jQuery));
