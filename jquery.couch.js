@@ -838,7 +838,11 @@
               url: this.uri + '_design/' + list[0] +
                    '/_list/' + list[1] + '/' + view + encodeOptions(options)
               },
-              ajaxOptions, 'An error occurred accessing the list'
+              ajaxOptions,
+              'An error occurred accessing the list',
+              {
+                headers: {'Accept': '*/*'},
+              }
           );
         },
 
@@ -1009,16 +1013,27 @@
       },
       complete: function(req) {
         var reqDuration = (new Date()).getTime() - timeStart;
-        try {
-          var resp = $.parseJSON(req.responseText);
-        } catch(e) {
-          if (options.error) {
-            options.error(req.status, req, e);
-          } else {
-            throw errorMessage + ': ' + e;
+
+        if (req.getResponseHeader('Content-Type') === 'application/json') {
+          try {
+            var resp = $.parseJSON(req.responseText);
+          } catch(e) {
+            if (options.error) {
+              options.error(req.status, req, e);
+            } else {
+              throw errorMessage + ': ' + e;
+            }
+            return;
           }
-          return;
         }
+        else {
+          /**
+           * i.e. In the case of the response of a list function,
+           * the content type can be various
+           */
+          var resp = req.responseText;
+        }
+
         if (options.ajaxStart) {
           options.ajaxStart(resp);
         }
@@ -1026,8 +1041,8 @@
           if (options.beforeSuccess) options.beforeSuccess(req, resp, reqDuration);
           if (options.success) options.success(resp, reqDuration);
         } else if (options.error) {
-          options.error(req.status, resp && resp.error ||
-                        errorMessage, resp && resp.reason || "no response",
+          options.error(req.status, resp && resp.error || errorMessage,
+                        resp && resp.reason || resp || "no response",
                         reqDuration);
         } else {
           throw errorMessage + ": " + resp.reason;
